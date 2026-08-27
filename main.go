@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -31,38 +30,27 @@ func main() {
 		return
 	}
 
-	if selectedOption == "Fleeting" {
-		captureText, err := captureInEditor()
-		if err != nil {
-			log.Fatalf("Failed capturing text in editor: %v", err)
-		}
-		if captureText == "" {
-			log.Fatal("No text saved in editor. Fleeting note canceled.")
-		}
-
-		destPath := resolveDestPath(vaultDir, captureText)
-		if fileExists(destPath) {
-			log.Fatalf("File already exists: %s", destPath)
-		}
-
-		if err := processAndCopyTemplate(templatePath, destPath, captureText); err != nil {
-			log.Fatalf("Failed to create fleeting note: %v", err)
-		}
-
-		log.Printf("Fleeting note created: %s", destPath)
-		return
+	inputText, err := captureInEditor()
+	if err != nil {
+		log.Fatalf("Failed capturing input in editor: %v", err)
+	}
+	if inputText == "" {
+		log.Fatal("No text saved in editor. Note creation canceled.")
 	}
 
-	title, err := promptInput("Enter note title: ")
-	if err != nil || title == "" {
-		log.Fatal("Valid note title is required.")
-	}
-
-	destPath := resolveDestPath(vaultDir, title)
+	destPath := resolveDestPath(vaultDir, inputText)
 	if fileExists(destPath) {
 		log.Fatalf("File already exists: %s", destPath)
 	}
 
+	if selectedOption == "Fleeting" {
+		if err := processAndCopyTemplate(templatePath, destPath, inputText); err != nil {
+			log.Fatalf("Failed to create fleeting note: %v", err)
+		}
+		return // Skip opening editor again
+	}
+
+	// Non-fleeting templates: standard copy & open final note in editor
 	if err := copyFile(templatePath, destPath); err != nil {
 		log.Fatalf("Failed to create note: %v", err)
 	}
@@ -92,7 +80,7 @@ func selectTemplate(templatesDir string) (string, string, error) {
 }
 
 func captureInEditor() (string, error) {
-	tmpFile, err := os.CreateTemp("", "fleeting-capture-*.txt")
+	tmpFile, err := os.CreateTemp("", "obsidian-title-*.txt")
 	if err != nil {
 		return "", fmt.Errorf("creating temp file: %w", err)
 	}
@@ -125,15 +113,6 @@ func processAndCopyTemplate(src, dst, captureText string) error {
 	}
 
 	return nil
-}
-
-func promptInput(prompt string) (string, error) {
-	fmt.Print(prompt)
-	scanner := bufio.NewScanner(os.Stdin)
-	if scanner.Scan() {
-		return strings.TrimSpace(scanner.Text()), nil
-	}
-	return "", scanner.Err()
 }
 
 func resolveDestPath(vaultDir, title string) string {
