@@ -1,4 +1,4 @@
-module rqpt/obsidivim
+module github.com/rqpt/obsidivim
 
 go 1.27.0
 
