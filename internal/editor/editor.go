@@ -20,6 +20,8 @@ func Open(filePath string) error {
 	return cmd.Run()
 }
 
+// CaptureInput launches plain `vim` with clean defaults (-u NONE)
+// to quickly grab title/fleeting note input without plugin overhead.
 func CaptureInput() (string, error) {
 	tmpFile, err := os.CreateTemp("", "obsidian-title-*.txt")
 	if err != nil {
@@ -29,8 +31,18 @@ func CaptureInput() (string, error) {
 	tmpFile.Close()
 	defer os.Remove(tmpPath)
 
-	if err := Open(tmpPath); err != nil {
-		return "", err
+	vim := "vim"
+	if _, err := exec.LookPath("vim"); err != nil {
+		vim = "nvim"
+	}
+
+	cmd := exec.Command(vim, "-u", "NONE", tmpPath)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("editor session failed: %w", err)
 	}
 
 	content, err := os.ReadFile(tmpPath)
