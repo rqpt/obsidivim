@@ -3,8 +3,9 @@ package main
 import (
 	"log"
 
+	"github.com/rqpt/editor"
+
 	"github.com/rqpt/obsidivim/internal/config"
-	"github.com/rqpt/obsidivim/internal/editor"
 	"github.com/rqpt/obsidivim/internal/note"
 	"github.com/rqpt/obsidivim/internal/template"
 )
