@@ -3,49 +3,72 @@ package main
 import (
 	"log"
 
-	"github.com/rqpt/editor"
-
 	"github.com/rqpt/obsidivim/internal/config"
+	"github.com/rqpt/obsidivim/internal/mode"
 	"github.com/rqpt/obsidivim/internal/note"
 	"github.com/rqpt/obsidivim/internal/template"
+)
+
+type menuState int
+
+const (
+	stateSelectMode menuState = iota
+	stateSelectFinal
 )
 
 func main() {
 	cfg := config.Load()
 
-	selectedOption, templatePath, err := template.Select(cfg.TemplatesDir)
-	if err != nil {
-		log.Fatalf("Template selection failed: %v", err)
-	}
-	if templatePath == "" {
-		return
-	}
+	state := stateSelectMode
 
-	inputText, err := editor.CaptureInput()
-	if err != nil {
-		log.Fatalf("Failed capturing input in editor: %v", err)
-	}
-	if inputText == "" {
-		log.Fatal("No text saved in editor. Note creation canceled.")
-	}
+	var (
+		modeSelection string
+		err           error
+	)
 
-	destPath := note.ResolvePath(cfg.VaultDir, inputText)
-	if note.Exists(destPath) {
-		log.Fatalf("File already exists: %s", destPath)
-	}
+	for {
+		switch state {
 
-	if selectedOption == "Fleeting" {
-		if err := template.ProcessAndSave(templatePath, destPath, inputText); err != nil {
-			log.Fatalf("Failed to create fleeting note: %v", err)
+		case stateSelectMode:
+			modeSelection, err = mode.Select()
+			if err != nil || modeSelection == "" {
+				log.Fatalf("Mode selection failed: %v", err)
+			}
+
+			state = stateSelectFinal
+
+		case stateSelectFinal:
+			if modeSelection == "New" {
+				templateSelection, templatePath, err := template.Select(cfg.TemplatesDir)
+				if err != nil {
+					log.Fatalf("Template selection failed: %v", err)
+				}
+				if templatePath == "" {
+					state = stateSelectMode
+					continue
+				}
+
+				note.CreateNew(cfg, templateSelection, templatePath)
+
+				return
+			} else if modeSelection == "Existing" {
+				selectedNote, err := note.SelectExisting(cfg)
+				if err != nil {
+					log.Fatalf("Failed selecting a note: %v", err)
+				}
+				if selectedNote == "" {
+					state = stateSelectMode
+					continue
+				}
+
+				if err := note.EditExisting(cfg, selectedNote); err != nil {
+					log.Fatalf("Failed to edit existing note: %v", err)
+				}
+
+				return
+			} else {
+				return
+			}
 		}
-		return
-	}
-
-	if err := note.Copy(templatePath, destPath); err != nil {
-		log.Fatalf("Failed to create note: %v", err)
-	}
-
-	if err := editor.Open(destPath); err != nil {
-		log.Fatalf("Failed to open editor: %v", err)
 	}
 }
