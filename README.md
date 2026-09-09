@@ -27,6 +27,7 @@ points to:
 
 - fleeting_note_template.md
 - research_note_template.md
+- blog_note_template.md
 
 Install the binary:
 `go install github.com/rqpt/obsidivim`
@@ -44,11 +45,11 @@ Launching this, you're first met by a fzf menu with two options:
 `Existing` runs another fzf menu with options of every single note in your vault.
 Select one, and it opens the note in your preferred editor.
 
-`New` runs another fzf menu with options of `Fleeting` and `Research`.
+`New` runs another fzf menu with options of `Fleeting`,`Research` and `Blog`.
 
 If you selected `Fleeting`, you would be prompted for a note title.
 That's it... it is supposed to capture some fleeting thought you have that you
 need to persist in your vault.
 
-Selecting `Research`, also prompts you for a note title, then drops you into
+Selecting `Research` or `Blog`, also prompts you for a note title, then drops you into
 your editor with the note open.

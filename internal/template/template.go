@@ -12,6 +12,7 @@ import (
 var Map = map[string]string{
 	"Fleeting": "fleeting_note_template.md",
 	"Research": "research_note_template.md",
+	"Blog":     "blog_note_template.md",
 }
 
 func Select(templatesDir string) (string, string, error) {
