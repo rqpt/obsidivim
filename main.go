@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"path/filepath"
 
 	"github.com/rqpt/obsidivim/internal/config"
 	"github.com/rqpt/obsidivim/internal/mode"
@@ -25,6 +26,22 @@ func main() {
 		modeSelection string
 		err           error
 	)
+
+	if *cfg.NoteType != "" {
+		templatePath, ok := template.Map[*cfg.NoteType]
+		if ok {
+			note.CreateNew(
+				cfg,
+				*cfg.NoteType,
+				filepath.Join(cfg.TemplatesDir, templatePath),
+			)
+
+			return
+		} else {
+			state = stateSelectFinal
+			modeSelection = "Existing"
+		}
+	}
 
 	for {
 		switch state {
