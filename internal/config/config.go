@@ -1,6 +1,7 @@
 package config
 
 import (
+	"flag"
 	"log"
 	"os"
 )
@@ -8,12 +9,21 @@ import (
 type Config struct {
 	VaultDir     string
 	TemplatesDir string
+	NoteType     *string
 }
 
 func Load() Config {
+	typePtr := flag.String(
+		"type",
+		"",
+		"an optional type of note - Fleeting, Research, Blog, Existing",
+	)
+	flag.Parse()
+
 	return Config{
 		VaultDir:     getRequiredEnv("OBSIDIAN_VAULT_DIR"),
 		TemplatesDir: getRequiredEnv("OBSIDIAN_TEMPLATES_DIR"),
+		NoteType:     typePtr,
 	}
 }
 
