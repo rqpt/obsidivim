@@ -1,6 +1,7 @@
 package note
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -29,35 +30,56 @@ func EditExisting(cfg config.Config, selectedNote string) error {
 	return editor.Open(notePath)
 }
 
-func CreateNew(cfg config.Config, templateSelection string, templatePath string) {
+func CreateNew(cfg config.Config, templateSelection string, templatePath string) error {
 	inputText, err := editor.CaptureInput()
 	if err != nil {
-		log.Fatalf("Failed capturing input in editor: %v", err)
+		return fmt.Errorf("Failed capturing input in editor: %w", err)
 	}
+	inputText = sanitizeFilename(inputText)
 	if inputText == "" {
-		log.Fatal("No text saved in editor. Note creation canceled.")
+		return errors.New("filename is empty")
 	}
 
 	destPath := resolvePath(cfg.VaultDir, inputText)
 	if exists(destPath) {
-		log.Fatalf("File already exists: %s", destPath)
+		return fmt.Errorf("File already exists: %s", destPath)
 	}
 
 	if templateSelection == "Fleeting" {
 		if err := template.ProcessAndSave(templatePath, destPath, inputText); err != nil {
-			log.Fatalf("Failed to create fleeting note: %v", err)
+			return fmt.Errorf("Failed to create fleeting note: %v", err)
 		}
 
-		return
+		return nil
 	}
 
 	if err := copy(templatePath, destPath); err != nil {
-		log.Fatalf("Failed to create note: %v", err)
+		return fmt.Errorf("Failed to create note: %w", err)
 	}
 
 	if err := editor.Open(destPath); err != nil {
-		log.Fatalf("Failed to open editor: %v", err)
+		return fmt.Errorf("Failed to open editor: %w", err)
 	}
+
+	return nil
+}
+
+func sanitizeFilename(name string) string {
+	name = strings.TrimSpace(name)
+
+	var b strings.Builder
+	b.Grow(len(name))
+
+	for _, r := range name {
+		switch r {
+		case '/', '#', '^', '[', ']', '|', '\x00':
+			b.WriteRune('_')
+		default:
+			b.WriteRune(r)
+		}
+	}
+
+	return strings.Trim(b.String(), " ._")
 }
 
 func resolvePath(vaultDir, title string) string {

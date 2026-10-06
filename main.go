@@ -65,7 +65,10 @@ func main() {
 					continue
 				}
 
-				note.CreateNew(cfg, templateSelection, templatePath)
+				err = note.CreateNew(cfg, templateSelection, templatePath)
+				if err != nil {
+					log.Fatalf("Failed creating a new note: %v", err)
+				}
 
 				return
 			} else if modeSelection == "Existing" {
