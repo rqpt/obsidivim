@@ -35,6 +35,7 @@ func CreateNew(cfg config.Config, templateSelection string, templatePath string)
 	if err != nil {
 		return fmt.Errorf("Failed capturing input in editor: %w", err)
 	}
+	inputText = sanitizeFilename(inputText)
 	if inputText == "" {
 		return errors.New("filename is empty")
 	}
@@ -61,6 +62,24 @@ func CreateNew(cfg config.Config, templateSelection string, templatePath string)
 	}
 
 	return nil
+}
+
+func sanitizeFilename(name string) string {
+	name = strings.TrimSpace(name)
+
+	var b strings.Builder
+	b.Grow(len(name))
+
+	for _, r := range name {
+		switch r {
+		case '/', '#', '^', '[', ']', '|', '\x00':
+			b.WriteRune('_')
+		default:
+			b.WriteRune(r)
+		}
+	}
+
+	return strings.Trim(b.String(), " ._")
 }
 
 func resolvePath(vaultDir, title string) string {
